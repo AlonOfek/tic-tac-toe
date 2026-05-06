@@ -12,18 +12,20 @@ namespace TicTacToe
 
         private void Awake()
         {
-            _newGameButton.onClick.AddListener(Hide);
+            _newGameButton.onClick.AddListener(NewGame);
             _root.SetActive(false);
         }
 
         private void OnEnable()
         {
             GameEvents.ResultReady += OnResultReady;
+            GameEvents.WinUndo += Hide;
         }
 
         private void OnDisable()
         {
             GameEvents.ResultReady -= OnResultReady;
+            GameEvents.WinUndo -= Hide;
         }
 
         private void OnResultReady(string message)
@@ -32,6 +34,11 @@ namespace TicTacToe
             _root.SetActive(true);
         }
 
+        private void NewGame()
+        {
+            Hide();
+            GameEvents.ResetBoard?.Invoke();
+        }
         private void Hide()
         {
             _root.SetActive(false);

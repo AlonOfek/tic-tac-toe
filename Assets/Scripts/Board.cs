@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TicTacToe
@@ -5,6 +6,8 @@ namespace TicTacToe
     public class Board : MonoBehaviour
     {
         [SerializeField] private Cell[] _cells;
+        
+        private Stack<int> _moves = new Stack<int>();
 
         private string _currentPlayer = "X";
         private bool _isGameOver;
@@ -24,11 +27,15 @@ namespace TicTacToe
         private void OnEnable()
         {
             GameEvents.CellClicked += OnCellClicked;
+            GameEvents.Undo += UndoLastMove;
+            GameEvents.ResetBoard += ResetBoard;
         }
 
         private void OnDisable()
         {
             GameEvents.CellClicked -= OnCellClicked;
+            GameEvents.Undo -= UndoLastMove;
+            GameEvents.ResetBoard -= ResetBoard;
         }
 
         private void OnCellClicked(Cell cell)
@@ -46,14 +53,15 @@ namespace TicTacToe
             }
 
             cell.SetMark(_currentPlayer);
+            _moves.Push(cell.Index);
             GameEvents.MoveMade?.Invoke();
-
+            
             string winner = CheckWinner();
             if (winner != "")
             {
                 _isGameOver = true;
                 GameEvents.GameWon?.Invoke(winner);
-                ResetBoard();
+                _currentPlayer = _currentPlayer == "X" ? "O" : "X";
                 return;
             }
 
@@ -61,12 +69,10 @@ namespace TicTacToe
             {
                 _isGameOver = true;
                 GameEvents.GameDrawn?.Invoke();
-                ResetBoard();
-                return;
             }
-
             _currentPlayer = _currentPlayer == "X" ? "O" : "X";
         }
+
 
         private void ResetBoard()
         {
@@ -105,6 +111,24 @@ namespace TicTacToe
                 }
             }
             return true;
+        }
+
+        private void UndoLastMove()
+        {
+            if (_moves.Count == 0)
+            {
+                return;
+            }
+
+            if (_isGameOver)
+            {
+                _isGameOver = false;
+                GameEvents.WinUndo?.Invoke();
+            }
+            int index = _moves.Pop();
+            Cell cell = _cells[index];
+            cell.Clear();
+            _currentPlayer = _currentPlayer == "X" ? "O" : "X";
         }
     }
 }
