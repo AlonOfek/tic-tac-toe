@@ -7,7 +7,7 @@ namespace TicTacToe
     {
         [SerializeField] private Cell[] _cells;
         
-        private Stack<int> _moves = new Stack<int>();
+        private Stack<MoveCommand> _moves = new Stack<MoveCommand>();
 
         private string _currentPlayer = "X";
         private bool _isGameOver;
@@ -51,9 +51,9 @@ namespace TicTacToe
                 GameEvents.InvalidMove?.Invoke();
                 return;
             }
-
-            cell.SetMark(_currentPlayer);
-            _moves.Push(cell.Index);
+            MoveCommand moveCommand = new MoveCommand(cell,_currentPlayer);
+            moveCommand.Execute();
+            _moves.Push(moveCommand);
             GameEvents.MoveMade?.Invoke();
             
             string winner = CheckWinner();
@@ -80,6 +80,7 @@ namespace TicTacToe
             {
                 _cells[i].Clear();
             }
+            _moves.Clear();
             _currentPlayer = "X";
             _isGameOver = false;
         }
@@ -125,9 +126,8 @@ namespace TicTacToe
                 _isGameOver = false;
                 GameEvents.WinUndo?.Invoke();
             }
-            int index = _moves.Pop();
-            Cell cell = _cells[index];
-            cell.Clear();
+            MoveCommand command = _moves.Pop();
+            command.Undo();
             _currentPlayer = _currentPlayer == "X" ? "O" : "X";
         }
     }
